@@ -72,7 +72,9 @@ res7: scala.collection.immutable.Map[String,Any] = Map(age -> foo, name -> 42)
 ```
 
 ## Scalaz ReaderT usage
+A [monad transformer](http://eed3si9n.com/learning-scalaz/Monad+transformers.html) for the Reader Monad
 
+```scala
 import scalaz._
 import Scalaz._
 import scala.language.higherKinds
