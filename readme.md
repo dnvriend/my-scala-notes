@@ -135,3 +135,69 @@ val statsFunctionAsync: ReaderT[Future, String, StringStats] =
 Await.result(statsFunctionAsync("abba"), 1.second) == 
   StringStats(4, true)
 ```
+
+## A FizzBuzz example
+Of course, the FizzBuzz can be solved in many ways, this is just one of many...
+
+```scala
+val fizzPred: Int => Boolean = (_: Int) % 3 == 0
+val buzzPred: Int => Boolean = (_: Int) % 5 == 0
+val woofPred: Int => Boolean = (_: Int) % 7 == 0
+
+val fizzTxt = (x: Boolean) => if(x) Option("Fizz") else None
+val buzzTxt = (x: Boolean) => if(x) Option("Buzz") else None
+val woofTxt = (x: Boolean) => if(x) Option("Woof") else None
+
+val fizz = fizzPred andThen fizzTxt
+val buzz = buzzPred andThen buzzTxt
+val woof= woofPred andThen woofTxt
+
+val rules = List(fizz, buzz, woof)
+
+val ys = (1 to 35).map(x => (x, rules))
+.map {
+  case (x, xs) => (x, xs.flatMap(_(x)))
+}
+.map {
+  case (x, Nil) => x.toString
+  case (x, xs) => xs.mkString
+}
+
+ys.foreach(println)
+
+1
+2
+Fizz
+4
+Buzz
+Fizz
+Woof
+8
+Fizz
+Buzz
+11
+Fizz
+13
+Woof
+FizzBuzz
+16
+17
+Fizz
+19
+Buzz
+FizzWoof
+22
+23
+Fizz
+Buzz
+26
+Fizz
+Woof
+29
+FizzBuzz
+31
+32
+Fizz
+34
+BuzzWoof
+```
