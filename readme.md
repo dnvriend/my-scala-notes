@@ -201,3 +201,75 @@ Fizz
 34
 BuzzWoof
 ```
+
+## FizzBuzz with Scalaz
+Solving FizzBuzz with Scalaz is possible and of course in many ways...
+
+```scala
+import scalaz._
+import Scalaz._
+
+val fizzPred: Int => Boolean = (_: Int) % 3 == 0
+val buzzPred: Int => Boolean = (_: Int) % 5 == 0
+val woofPred: Int => Boolean = (_: Int) % 7 == 0
+
+val fizzTxt = (x: Boolean) => if(x) Option("Fizz") else None
+val buzzTxt = (x: Boolean) => if(x) Option("Buzz") else None
+val woofTxt = (x: Boolean) => if(x) Option("Woof") else None
+
+val fizz = fizzPred andThen fizzTxt
+val buzz = buzzPred andThen buzzTxt
+val woof= woofPred andThen woofTxt
+
+val rules = List(fizz, buzz, woof)
+
+val ys = (1 to 35).map { x => 
+  // apply the value to the list of rules
+  (List(x) <*> rules)
+    // the resulting List[Option] will be flatten'd
+    // and converted to an Option[NonEmptyList]
+    .flatten.toNel
+    // if its a Some[NonEmptyList], convert that NEL to a String
+    .map(_.toList.mkString)
+    // get the value, or put the x' value here as a String
+    .getOrElse(x.toString)
+}
+
+ys.foreach(println)
+
+1
+2
+Fizz
+4
+Buzz
+Fizz
+Woof
+8
+Fizz
+Buzz
+11
+Fizz
+13
+Woof
+FizzBuzz
+16
+17
+Fizz
+19
+Buzz
+FizzWoof
+22
+23
+Fizz
+Buzz
+26
+Fizz
+Woof
+29
+FizzBuzz
+31
+32
+Fizz
+34
+BuzzWoof
+```
