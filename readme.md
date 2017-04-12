@@ -209,21 +209,20 @@ Solving FizzBuzz with Scalaz is possible and of course in many ways...
 import scalaz._
 import Scalaz._
 
-val fizzPred: Int => Boolean = (_: Int) % 3 == 0
-val buzzPred: Int => Boolean = (_: Int) % 5 == 0
-val woofPred: Int => Boolean = (_: Int) % 7 == 0
+val fizzPred = (_: Int) % 3 == 0
+val buzzPred = (_: Int) % 5 == 0
+val woofPred = (_: Int) % 7 == 0
 
-val fizzTxt = (x: Boolean) => if(x) Option("Fizz") else None
-val buzzTxt = (x: Boolean) => if(x) Option("Buzz") else None
-val woofTxt = (x: Boolean) => if(x) Option("Woof") else None
-
-val fizz = fizzPred andThen fizzTxt
-val buzz = buzzPred andThen buzzTxt
-val woof= woofPred andThen woofTxt
+val fizz = (x: Int) =>
+  Option(x).filterNot(fizzPred).map(_.toString).toSuccessNel("Fizz")
+val buzz = (x: Int) =>
+  Option(x).filterNot(buzzPred).map(_.toString).toSuccessNel("Buzz")
+val woof = (x: Int) =>
+  Option(x).filterNot(woofPred).map(_.toString).toSuccessNel("Woof")
 
 val rules = List(fizz, buzz, woof)
 
-val ys = (1 to 35).map { x => 
+val ys = (1 to 35).map { x =>
   // apply the value to the list of rules
   (List(x) <*> rules)
     // the resulting List[Option] will be flatten'd
