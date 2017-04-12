@@ -230,7 +230,7 @@ val ys = (1 to 35).map { x =>
     // and converted to an Option[NonEmptyList]
     .flatten.toNel
     // if its a Some[NonEmptyList], convert that NEL to a String
-    .map(_.toList.mkString)
+    .map(_.fold)
     // get the value, or put the x' value here as a String
     .getOrElse(x.toString)
 }
@@ -272,4 +272,69 @@ FizzBuzz
 Fizz
 34
 BuzzWoof
+```
+
+## FizzBuzz using Scalaz Validation
+A solution (of many) that involves using Scalaz Validation:
+
+```scala
+import scalaz._
+import Scalaz._
+
+val fizzPred = (_: Int) % 3 == 0
+val buzzPred = (_: Int) % 5 == 0
+val woofPred = (_: Int) % 7 == 0
+
+val fizz = (x: Int) =>
+  Option(x).filterNot(fizzPred).map(_.toString).toSuccessNel("Fizz")
+val buzz = (x: Int) =>
+  Option(x).filterNot(buzzPred).map(_.toString).toSuccessNel("Buzz")
+val woof = (x: Int) =>
+  Option(x).filterNot(woofPred).map(_.toString).toSuccessNel("Woof")
+
+val rules = List(fizz, buzz, woof)
+
+val ys = (1 to 35).toList.map { x =>
+  val ys = List(x) <*> rules
+  ys.sequenceU.rightMap(_.head).valueOr(_.fold)
+}
+
+ys.foreach(println)
+
+/**
+: 1
+: 2
+: fizz
+: 4
+: buzz
+: fizz
+: woof
+: 8
+: fizz
+  10: buzz
+  11: 11
+  12: fizz
+  13: 13
+  14: woof
+  15: fizzbuzz
+  16: 16
+  17: 17
+  18: fizz
+  19: 19
+  20: buzz
+  21: fizzwoof
+  22: 22
+  23: 23
+  24: fizz
+  25: buzz
+  26: 26
+  27: fizz
+  28: woof
+  29: 29
+  30: fizzbuzz
+  31: 31
+  32: 32
+  33: fizz
+  34: 34
+  35: buzzwoof
 ```
