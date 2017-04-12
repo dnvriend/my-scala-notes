@@ -301,40 +301,39 @@ val ys = (1 to 35).toList.map { x =>
 
 ys.foreach(println)
 
-/**
-: 1
-: 2
-: fizz
-: 4
-: buzz
-: fizz
-: woof
-: 8
-: fizz
-  10: buzz
-  11: 11
-  12: fizz
-  13: 13
-  14: woof
-  15: fizzbuzz
-  16: 16
-  17: 17
-  18: fizz
-  19: 19
-  20: buzz
-  21: fizzwoof
-  22: 22
-  23: 23
-  24: fizz
-  25: buzz
-  26: 26
-  27: fizz
-  28: woof
-  29: 29
-  30: fizzbuzz
-  31: 31
-  32: 32
-  33: fizz
-  34: 34
-  35: buzzwoof
+1
+2
+Fizz
+4
+Buzz
+Fizz
+Woof
+8
+Fizz
+Buzz
+11
+Fizz
+13
+Woof
+FizzBuzz
+16
+17
+Fizz
+19
+Buzz
+FizzWoof
+22
+23
+Fizz
+Buzz
+26
+Fizz
+Woof
+29
+FizzBuzz
+31
+32
+Fizz
+34
+BuzzWoof
 ```
