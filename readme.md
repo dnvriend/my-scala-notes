@@ -212,13 +212,14 @@ import Scalaz._
 val fizzPred = (_: Int) % 3 == 0
 val buzzPred = (_: Int) % 5 == 0
 val woofPred = (_: Int) % 7 == 0
+  
+val fizzTxt = (x: Boolean) => if(x) Option("Fizz") else None
+val buzzTxt = (x: Boolean) => if(x) Option("Buzz") else None
+val woofTxt = (x: Boolean) => if(x) Option("Woof") else None
 
-val fizz = (x: Int) =>
-  Option(x).filterNot(fizzPred).map(_.toString).toSuccessNel("Fizz")
-val buzz = (x: Int) =>
-  Option(x).filterNot(buzzPred).map(_.toString).toSuccessNel("Buzz")
-val woof = (x: Int) =>
-  Option(x).filterNot(woofPred).map(_.toString).toSuccessNel("Woof")
+val fizz = fizzPred andThen fizzTxt
+val buzz = buzzPred andThen buzzTxt
+val woof= woofPred andThen woofTxt
 
 val rules = List(fizz, buzz, woof)
 
@@ -280,16 +281,12 @@ A solution (of many) that involves using Scalaz Validation:
 import scalaz._
 import Scalaz._
 
-val fizzPred = (_: Int) % 3 == 0
-val buzzPred = (_: Int) % 5 == 0
-val woofPred = (_: Int) % 7 == 0
-
 val fizz = (x: Int) =>
-  Option(x).filterNot(fizzPred).map(_.toString).toSuccessNel("Fizz")
+  Option(x).filterNot(_ % 3 == 0).map(_.toString).toSuccessNel("Fizz")
 val buzz = (x: Int) =>
-  Option(x).filterNot(buzzPred).map(_.toString).toSuccessNel("Buzz")
+  Option(x).filterNot(_ % 5 == 0).map(_.toString).toSuccessNel("Buzz")
 val woof = (x: Int) =>
-  Option(x).filterNot(woofPred).map(_.toString).toSuccessNel("Woof")
+  Option(x).filterNot(_ % 7 == 0).map(_.toString).toSuccessNel("Woof")
 
 val rules = List(fizz, buzz, woof)
 
