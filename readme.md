@@ -136,8 +136,53 @@ Await.result(statsFunctionAsync("abba"), 1.second) ==
   StringStats(4, true)
 ```
 
+## Simple FizzBuzz example
+FizzBuzz can be solved in many ways, you could do the following:
+
+```scala
+def evaluate(x: Int): String = {
+  if(x % 15 == 0)
+    "FizzBuzz"
+  else if(x % 3 == 0) 
+    "Fizz"
+  else if(x % 5 == 0)
+    "Buzz"
+  else x.toString
+}
+
+(1 to 100).map(evaluate)
+```
+
+## FizzBuzz with pattern matching
+If you like pattern matching approach by using tuples:
+
+```scala
+(1 to 100)
+  .map(x => (x, x % 3, x % 5))
+  .map {
+    case (_, 0, 0) => "FizzBuzz"
+    case (_, 0, _) => "Fizz"
+    case (_, _, 0) => "Buzz"
+    case (nr,_, _) => nr
+  }
+```
+
+```scala
+Stream.from(1)
+  .map(x => (x, x % 3, x % 5))
+  .map {
+    case (_, 0, 0) => "FizzBuzz"
+    case (_, 0, _) => "Fizz"
+    case (_, _, 0) => "Buzz"
+    case (nr,_, _) => nr
+  }
+.take(35)
+.toList
+```
+
 ## A FizzBuzz example
-Of course, the FizzBuzz can be solved in many ways, this is just one of many...
+Of course, the FizzBuzz can be solved in many ways, this is just one of many
+that uses an aggregator approach:
 
 ```scala
 val fizzPred: Int => Boolean = (_: Int) % 3 == 0
@@ -203,7 +248,7 @@ BuzzWoof
 ```
 
 ## FizzBuzz with Scalaz
-Solving FizzBuzz with Scalaz is possible and of course in many ways...
+Also using an aggregator:
 
 ```scala
 import scalaz._
