@@ -154,7 +154,48 @@ def evaluate(x: Int): String = {
 ```
 
 ## FizzBuzz with pattern matching
-If you like pattern matching approach by using tuples:
+If you like pattern matching approach: 
+
+Using guards:
+
+```scala
+(1 to 100)
+  .map {
+    case x if x % 15 == 0 => "FizzBuzz"
+    case x if x % 3 == 0 => "Fizz"
+    case x if x % 5 == 0 => "Buzz"
+    case x => x.toString
+  }
+```
+
+Using extractors:
+
+```scala
+object FizzBuzz {
+  def unapply(arg: Int): Option[String] =
+    Option(arg).find(_ % 15 == 0).map(_ => "FizzBuzz")
+}
+
+object Fizz {
+  def unapply(arg: Int): Option[String] =
+    Option(arg).find(_ % 3 == 0).map(_ => "Fizz")
+}
+
+object Buzz {
+  def unapply(arg: Int): Option[String] =
+    Option(arg).find(_ % 5 == 0).map(_ => "Buzz")
+}
+
+(1 to 100)
+  .map {
+    case FizzBuzz(x) => x
+    case Fizz(x) => x
+    case Buzz(x) => x
+    case x => x.toString
+  }
+```
+
+Using tuples:
 
 ```scala
 (1 to 100)
@@ -166,6 +207,8 @@ If you like pattern matching approach by using tuples:
     case (nr,_, _) => nr
   }
 ```
+
+Using a Stream:
 
 ```scala
 Stream.from(1)
