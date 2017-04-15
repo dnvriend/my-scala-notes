@@ -422,7 +422,116 @@ Fizz
 BuzzWoof
 ```
 
-## 1. What is the difference between a var, a val, lazy val and def?
+## Finding a line in a file that is double
+Say, we want to find a line in a file that is double, so the line must be somewhere in the file but is double.
+Because the solution revolves around aggregating results, or 'appending', Monoids play a big role. Using a library
+like Scalaz for example, you can use the Monoids from these libraries and saves a lot of boilerplate code so the
+code now just specifies what to do, and not how to do it:
+
+```scala
+import java.security.MessageDigest
+
+val lines =
+  """
+    |Now look at them yo-yos thats the way you do it
+    |You play the guitar on the mtv
+    |That aint workin thats the way you do it
+    |Money for nothin and chicks for free
+    |Now that aint workin thats the way you do it
+    |Lemme tell ya them guys aint dumb
+    |Maybe get a blister on your little finger
+    |Maybe get a blister on your thumb
+    |
+    |We gotta install microwave ovens
+    |Custom kitchen deliveries
+    |We gotta move these refrigerators
+    |We gotta move these colour tvs
+    |
+    |See the little faggot with the earring and the makeup
+    |Yeah buddy thats his own hair
+    |That little faggot got his own jet airplane
+    |That little faggot hes a millionaire
+    |
+    |We gotta install microwave ovesns
+    |Custom kitchens deliveries
+    |We gotta move these refrigerators
+    |We gotta move these colour tvs
+    |
+    |I shoulda learned to play the guitar
+    |I shoulda learned to play them drums
+    |Look at that mama, she got it stickin in the camera
+    |Man we could have some fun
+    |And hes up there, whats that? hawaiian noises?
+    |Bangin on the bongoes like a chimpanzee
+    |That aint workin thats the way you do it
+    |Get your money for nothin get your chicks for free
+    |
+    |We gotta install microwave ovens
+    |Custom kitchen deliveries
+    |We gotta move these refrigerators
+    |We gotta move these colour tvs, lord
+    |
+    |Now that aint workin thats the way you do it
+    |You play the guitar on the mtv
+    |That aint workin thats the way you do it
+    |Money for nothin and your chicks for free
+    |Money for nothin and chicks for free
+  """.stripMargin.trim.replace(",", "").replace("'", "").replace("?", "").split("\n")
+
+def hasher(str: String, algo: String = "MD5"): String = {
+  val HexChars = "0123456789abcdef".toCharArray
+  val digest = MessageDigest.getInstance(algo)
+  val bytes: Array[Byte] = digest.digest(str.getBytes)
+  val buffer = new StringBuilder(bytes.length * 2)
+  bytes.foreach { byte =>
+    buffer.append(HexChars((byte & 0xF0) >> 4))
+    buffer.append(HexChars(byte & 0x0F))
+  }
+  buffer.toString
+}
+
+
+import scalaz._
+import Scalaz._
+
+// if we append two maps using then we get the following result
+(Map("a" -> 1) |+| Map("a" -> 1)) == Map("a" -> 2)
+
+// if we have a List[Map[String, Int]] and we fold the list using suml
+// using the available monoids we get the following
+List(Map("a" -> 1), Map("a" -> 1)).suml == Map("a" -> 2)
+
+// so if we can just digest the text and create a map then we're all good
+// if the key is unique like say a hash, and the value is a '1' then we
+// can use the monoid strategy out of the box of scalaz
+
+// what we can do is the following
+// 1. the key is still a hash
+// 2. The value is a pair
+// 3. The pair contains the '1' as the key and a List of rownumbers as the value
+List(Map("a" -> (1 -> List(1))), Map("a" -> (1 -> List(2))), Map("a" -> (1 -> List(3))), Map("b" -> (1 -> List(1)))).suml
+
+// so what we must encode is the following:
+// 1. A List[Map[String, (Int, List[Int])]
+// 2. Each element is a Map
+// 3. The map uses the hash as the key
+// 4. The value points to a pair of (1, List[Int])
+// 5. The value of the pair is a list of rownumber
+
+val hashedLines: Map[String, (Int, List[Int])] = lines.zipWithIndex.map {
+  case (str, index) => Map(hasher(str) -> (1 -> List(index)))
+}.toList.suml
+
+hashedLines.filter(_._2._1 == 2).flatMap(_._2._2).headOption.map(row => lines(row))
+```
+
+The result is:
+
+```bash
+res0: Option[String] = Some(Now that aint workin thats the way you do it)
+```
+
+## What is the difference between a var, a val, lazy val and def?
 A __var__ is a variable. It’s a mutable reference to a value. Since it’s mutable, its value may change through the program lifetime,
 making it a magnet for errors. Keep in mind that the variable type cannot change in Scala. You may say that a var behaves similarly
 to Java variables.
