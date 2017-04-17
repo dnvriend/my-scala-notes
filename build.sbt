@@ -20,10 +20,17 @@ libraryDependencies += "com.chuusai" %% "shapeless" % "2.3.2"
 // https://github.com/typelevel/cats
 //libraryDependencies += "org.typelevel" %% "cats" % "0.9.0"
 
+// circe
 val circeVersion = "0.7.0"
 libraryDependencies += "io.circe" %% "circe-core" % circeVersion
 libraryDependencies += "io.circe" %% "circe-generic" % circeVersion
 libraryDependencies += "io.circe" %% "circe-parser" % circeVersion
+
+// avro4s
+libraryDependencies += "com.sksamuel.avro4s" %% "avro4s-core" % "1.6.4"
+
+// parse config
+libraryDependencies += "com.github.pureconfig" %% "pureconfig" % "0.7.0"
 
 // compile-time DI (only used at compile-time so in "provided" scope)
 // https://github.com/adamw/macwire

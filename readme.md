@@ -1,6 +1,237 @@
 # my-scala-notes
 My scala notes, because I need to store them somewhere...
 
+## Scalaz Validation: Parsing user input
+Parsing user input is easy with Scala and is provided by the class [StringLike](http://scala-lang.org/files/archive/api/current/scala/collection/immutable/StringLike.html)
+and provides methods like 'toBoolean', 'toInt', 'toLong', 'toDouble', but all of these methods can throw exceptions like NumberFormatException and IllegalArgumentException.
+
+```scala
+scala> "foo".toBoolean
+java.lang.IllegalArgumentException: For input string: "foo"
+
+scala> "foo".toDouble
+java.lang.NumberFormatException: For input string: "foo"
+```
+
+Of course, we can wrap the operation in a [scala.util.Try](http://scala-lang.org/files/archive/api/current/scala/util/Try.html), but this is not ideal:
+
+```scala
+scala> Try("foo".toBoolean)
+res0: scala.util.Try[Boolean] = Failure(java.lang.IllegalArgumentException: For input string: "foo")
+```
+
+Scalaz provides [scalaz.syntax.std.StingOps](https://github.com/scalaz/scalaz/blob/v7.2.11/core/src/main/scala/scalaz/syntax/std/StringOps.scala) and
+provides the methods:
+
+- def parseBoolean: Validation[IllegalArgumentException, Boolean] = s.parseBoolean(self)
+- def parseByte: Validation[NumberFormatException, Byte] = s.parseByte(self)
+- def parseShort: Validation[NumberFormatException, Short] = s.parseShort(self)
+- def parseInt: Validation[NumberFormatException, Int] = s.parseInt(self)
+- def parseLong: Validation[NumberFormatException, Long] = s.parseLong(self)
+- def parseFloat: Validation[NumberFormatException, Float] = s.parseFloat(self)
+- def parseDouble: Validation[NumberFormatException, Double] = s.parseDouble(self)
+- def parseBigInt: Validation[NumberFormatException, BigInt] = s.parseBigInt(self)
+- def parseBigDecimal: Validation[NumberFormatException, BigDecimal] = s.parseBigDecimal(self)
+
+```scala
+scala> import scalaz._
+import scalaz._
+
+scala> import Scalaz._
+import Scalaz._
+
+scala> "foo".parseBoolean
+res0: scalaz.Validation[IllegalArgumentException,Boolean] = Failure(java.lang.IllegalArgumentException: For input string: "foo")
+
+scala> "true".parseBoolean
+res1: scalaz.Validation[IllegalArgumentException,Boolean] = Success(true)
+```
+
+All the methods provided by [scalaz.syntax.std.StingOps](https://github.com/scalaz/scalaz/blob/v7.2.11/core/src/main/scala/scalaz/syntax/std/StringOps.scala)
+return a [scalaz.Validation](https://github.com/scalaz/scalaz/blob/v7.2.11/core/src/main/scala/scalaz/Validation.scala) with a Throwable on the failure side
+and the expected type on the success side.
+
+## Creating Validation instances
+The companion object of [scalaz.Validation](https://github.com/scalaz/scalaz/blob/v7.2.11/core/src/main/scala/scalaz/Validation.scala) provides the following
+ways to create Validation instances:
+
+```scala
+// create a success instance
+scala> Validation.success[String, Int](1)
+res0: scalaz.Validation[String,Int] = Success(1)
+
+// create a failure instance
+scala> Validation.failure[String, Int]("My Error")
+res1: scalaz.Validation[String,Int] = Failure(My Error)
+
+// create a FailureNel instance
+scala> Validation.failureNel[String, Int]("My Error")
+res2: scalaz.ValidationNel[String,Int] = Failure(NonEmpty[My Error])
+
+// create a Validation, based on a predicate, the instance will either be a
+// success or a failure
+scala> Validation.lift(17)(age => age < 18, "You must be at least 18 to buy beer")
+res3: scalaz.Validation[String,Int] = Failure(You must be at least 18 to buy beer)
+
+// create a ValidationNel instance
+scala> Validation.liftNel(17)(age => age < 18, "You must be at least 18 to buy beer")
+res4: scalaz.ValidationNel[String,Int] = Failure(NonEmpty[You must be at least 18 to buy beer])
+
+// create a validation from a thunk that can throw
+scala> Validation.fromTryCatchThrowable[Int, Throwable](1/0)
+res5: scalaz.Validation[Throwable,Int] = Failure(java.lang.ArithmeticException: / by zero)
+
+// create a validation from a thunk that throws nonfatal exceptions
+scala> Validation.fromTryCatchNonFatal[Int](1/0)
+res6: scalaz.Validation[Throwable,Int] = Failure(java.lang.ArithmeticException: / by zero)
+
+// create a validation from an either
+scala> val answer = scala.util.Right[String, Int](42)
+answer: scala.util.Right[String,Int] = Right(42)
+
+scala> Validation.fromEither(answer)
+res7: scalaz.Validation[String,Int] = Success(42)
+```
+
+The most interesting constructors are 'lift' and 'liftNel' that take a predicate, and if that predicate resolves to true, it will
+return a Failure with the contents of the second argument of the 'lift' method. These two methods are really handy for encoding
+business rule validations:
+
+```scala
+scala> def validateAge(age: Int): ValidationNel[String, Int] = Validation.liftNel(age)(age => age < 18, "You must be at least 18 to buy beer")
+validateAge: (age: Int)scalaz.ValidationNel[String,Int]
+
+scala> def validateName(name: String): ValidationNel[String, String] = Validation.liftNel(name)(name => name.isEmpty, "Name must not be empty")
+validateName: (name: String)scalaz.ValidationNel[String,String]
+
+scala> validateAge(17)
+res0: scalaz.ValidationNel[String,Int] = Failure(NonEmpty[You must be at least 18 to buy beer])
+
+scala> validateName("")
+res1: scalaz.ValidationNel[String,String] = Failure(NonEmpty[Name must not be empty])
+```
+
+## Using Validation results in an imperative way
+The [scalaz.Validation](https://github.com/scalaz/scalaz/blob/v7.2.11/core/src/main/scala/scalaz/Validation.scala) instances contain two properties
+'isSuccess' and 'isFailure' that return a boolean, so we could do the following:
+
+```scala
+scala> if(validateAge(17).isSuccess && validateName("Dennis").isSuccess) "yeah success!" else "darn, a failure"
+res0: String = darn, a failure
+```
+
+Of course there are better ways, lets go functional!
+
+## Using Validation results the functional way
+Lets do the following, parse an electronic form that takes the user name and the user age:
+
+```scala
+scala> val formName = ""
+formName: String = ""
+
+scala> val formAge = "17"
+formAge: String = 17
+
+// convert it to a ValidationNel[String, Int]
+scala> val parsedAge: ValidationNel[String, Int] =
+     |   formAge.parseInt.leftMap(_.toString).toValidationNel
+parsedAge: scalaz.ValidationNel[String,Int] = Success(17)
+
+// define some validation methods
+scala> def validateName(name: String): ValidationNel[String, String] =
+     |   Validation.liftNel(name)(name => name.isEmpty, "Name must not be empty")
+validateName: (name: String)scalaz.ValidationNel[String,String]
+
+scala> def validateAge(age: Int): ValidationNel[String, Int] =
+     |   Validation.liftNel(age)(age => age < 18, "You must be at least 18 to buy beer")
+validateAge: (age: Int)scalaz.ValidationNel[String,Int]
+
+// create a case class to capture a validated person
+scala> case class Person(name: String, age: Int)
+defined class Person
+
+// define a validation to validate name and age, accrue the failures and create
+// a person that captures a valid person
+scala> def validateNameAndAge(name: String, age: Int): ValidationNel[String, Person] =
+     |   (validateName(name) |@| validateAge(age))(Person.apply)
+validateNameAndAge: (name: String, age: Int)scalaz.ValidationNel[String,Person]
+
+// Validation from a form has two steps:
+// 1. converting from the String types to the expected types so String => Int
+// 2. Validating the business rules and accrue the results
+
+// we can use Validation is a for-expression by importing the following:
+scala> import scalaz.Validation.FlatMap.ValidationFlatMapRequested
+import scalaz.Validation.FlatMap.ValidationFlatMapRequested
+
+scala> for {
+     |   age <- parsedAge
+     |   person <- validateNameAndAge(formName, age)
+     | } yield person
+res0: scalaz.Validation[scalaz.NonEmptyList[String],Person] =
+  Failure(NonEmpty[Name must not be empty,You must be at least 18 to buy beer])
+```
+
+## Validating a list of business rules
+We can use the 'traverse' method on a List of business rules to validate the person eg:
+
+```scala
+scala> val formName = "Dennis42"
+formName: String = Dennis42
+
+scala> val formAge = "17"
+formAge: String = 17
+
+scala> val parsedAge: ValidationNel[String, Int] =
+     |   formAge.parseInt.leftMap(_.toString).toValidationNel
+parsedAge: scalaz.ValidationNel[String,Int] = Success(17)
+
+// lets create some validations
+scala> def validateNonEmpty(name: String): ValidationNel[String, String] =
+     |   Validation.liftNel(name)(name => name.isEmpty, "Name must not be empty")
+validateNonEmpty: (name: String)scalaz.ValidationNel[String,String]
+
+scala> def validateLength(name: String): ValidationNel[String, String] =
+     |   Validation.liftNel(name)(name => name.length > 7, "Maximum length of 7 chars exceeded")
+validateLength: (name: String)scalaz.ValidationNel[String,String]
+
+scala> def validateOnlyLetters(name: String): ValidationNel[String, String] =
+     |   Validation.liftNel(name)(name => name.exists(char => !char.isLetter), "name must contain only letters")
+validateOnlyLetters: (name: String)scalaz.ValidationNel[String,String]
+
+scala> def validateAge(age: Int): ValidationNel[String, Int] =
+     |   Validation.liftNel(age)(age => age < 18, "You must be at least 18 to buy beer")
+validateAge: (age: Int)scalaz.ValidationNel[String,Int]
+
+scala> def validateName(name: String): ValidationNel[String, String] = {
+     |   NonEmptyList(
+     |     validateNonEmpty _,
+     |     validateLength _,
+     |     validateOnlyLetters _)
+     |     .traverseU(_.apply(name))
+     |     .rightMap(_.head)
+     | }
+validateName: (name: String)scalaz.ValidationNel[String,String]
+
+scala> case class Person(name: String, age: Int)
+defined class Person
+
+scala> def validateNameAndAge(name: String, age: Int): ValidationNel[String, Person] =
+     |   (validateName(formName) |@| validateAge(age)) (Person.apply)
+validateNameAndAge: (name: String, age: Int)scalaz.ValidationNel[String,Person]
+
+// we can use Validation is a for-expression by importing the following:
+scala> import scalaz.Validation.FlatMap.ValidationFlatMapRequested
+import scalaz.Validation.FlatMap.ValidationFlatMapRequested
+
+scala> for {
+     |   age <- parsedAge
+     |   person <- validateNameAndAge(formName, age)
+     | } yield person
+res1: scalaz.Validation[scalaz.NonEmptyList[String],Person] =
+  Failure(NonEmpty[Maximum length of 7 chars exceeded,name must contain only letters,You must be at least 18 to buy beer])
+```
+
 ## Case Class Tricks
 A case class is a [scala.Product](http://www.scala-lang.org/files/archive/api/current/scala/Product.html), which
 is the base trait for all case classes and [tuples](http://www.scala-lang.org/files/archive/api/current/scala/Tuple1.html). Because both case classes and tuples are a Product type, they have access to the methods:
@@ -530,7 +761,7 @@ The result is:
 ```bash
 res0: Option[String] = Some(Now that aint workin thats the way you do it)
 ```
-
+b
 ## What is the difference between a var, a val, lazy val and def?
 A __var__ is a variable. It’s a mutable reference to a value. Since it’s mutable, its value may change through the program lifetime,
 making it a magnet for errors. Keep in mind that the variable type cannot change in Scala. You may say that a var behaves similarly
