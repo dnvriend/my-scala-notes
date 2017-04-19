@@ -367,6 +367,50 @@ Await.result(statsFunctionAsync("abba"), 1.second) ==
   StringStats(4, true)
 ```
 
+## Creating and Parsing a binary String
+Whats really fun is converting a text String to a binary String and back again:
+
+```scala
+"Hello World".getBytes.map(Integer.toBinaryString(_)).mkString(" ")
+
+"1001000 1100101 1101100 1101100 1101111 100000 1010111 1101111 1110010 1101100 1100100"
+.split("\\s").map(Integer.parseInt(_, 2)).map(_.toChar).mkString
+```
+
+## Scala object equality
+In Scala we check for object equality using '==' operator. The '==' operator
+delegates to the '.equals' method:
+
+```scala
+scala> 1 == 1
+res0: Boolean = true
+
+scala> new String("foo") == new String("foo")
+res1: Boolean = true
+```
+
+When creating our own value objects manually, we should override the equals method, but there is
+a better way, using case classes. Case classes create a valid '.equals' and 'hashcode' methods:
+
+```scala
+scala> case class Person(name: String, age: Int)
+defined class Person
+
+scala> Person("foo", 42) == Person("foo", 42)
+res2: Boolean = true
+```
+
+## Checking for reference equality
+In Scala we check for reference equality using the 'eq' and 'ne' operators:
+
+```scala
+scala> new String("foo") eq new String("foo")
+res0: Boolean = false
+
+scala> new String("foo") ne new String("foo")
+res1: Boolean = true
+```
+
 ## Simple FizzBuzz example
 FizzBuzz can be solved in many ways, you could do the following:
 

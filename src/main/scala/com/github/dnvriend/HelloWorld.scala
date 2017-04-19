@@ -16,6 +16,8 @@
 
 package com.github.dnvriend
 
+import hello.PersonService
+
 import scalaz._
 import Scalaz._
 
@@ -39,7 +41,10 @@ object Person {
     (validateName(name) |@| validateAge(age))(Person.apply)
 }
 
-final case class Person(name: String, age: Int)
+final case class Person(name: String, age: Int) {
+  require(name.isEmpty, "naame must be nonempty")
+  require(age > 42, "age > 42")
+}
 
 object HelloWorld extends App {
   val result: Disjunction[NonEmptyList[String], Person] = for {
@@ -54,4 +59,9 @@ object HelloWorld extends App {
     case DRight(person) =>
       println(person)
   }
+
+  val personService: PersonService = hello.PersonService()
+  personService.find(1L)
+  Person("a", 12)
+
 }
