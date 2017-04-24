@@ -53,6 +53,42 @@ scala> ys.map((addNumbers _).tupled)
 res4: scala.collection.immutable.Vector[Int] = Vector(3, 5, 7)
 ```
 
+## Curried functions
+Methods can be converted to functions like so:
+
+```scala
+scala> def addNumbers(x: Int, y: Int) = x + y
+addNumbers: (x: Int, y: Int)Int
+
+scala> val x = addNumbers _
+x: (Int, Int) => Int = $$Lambda$1530/265754685@1e63cd7e
+```
+
+The function can then be applied by applying the function with all the arguments:
+
+```scala
+scala> x(1, 2)
+res0: Int = 3
+```
+
+We can also curry the function, which means that we've converted the function that takes multiple arguments
+into a sequence of functions each taking a single argument:
+
+```scala
+scala> x.curried
+res1: Int => (Int => Int) = scala.Function2$$Lambda$1529/1670650711@5c7bbf0a
+
+scala> x(1)
+scala> val y = x.curried
+y: Int => (Int => Int) = scala.Function2$$Lambda$1529/1670650711@60e784de
+
+scala> y(1)
+res2: Int => Int = scala.Function2$$Lambda$1531/1050434890@6fae8b4d
+
+scala> res3(2)
+res3: Int = 3
+```
+
 ## Scalaz Validation: Parsing user input
 Parsing user input is easy with Scala and is provided by the class [StringLike](http://scala-lang.org/files/archive/api/current/scala/collection/immutable/StringLike.html)
 and provides methods like 'toBoolean', 'toInt', 'toLong', 'toDouble', but all of these methods can throw exceptions like NumberFormatException and IllegalArgumentException.
