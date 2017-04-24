@@ -1,6 +1,58 @@
 # my-scala-notes
 My scala notes, because I need to store them somewhere...
 
+## How to unify method parameters and tuples
+Scala does not unify method parameters and tuples, for example, the following method:
+
+```scala
+def addNumbers(x: Int, y: Int): Int = x + y
+```
+
+Doesn't work with tuples. It would be nice if it did, but that is not the case.
+Also, changing the method API to tuples doesn't work as nice:
+
+```scala
+def addNumbers(numbers: (Int, Int)): Int = numbers match {
+  case (x, y) => x + y
+}
+```
+
+What is the alternative? Well, we can 'convert' the method to a function and change its interface to a tuple:
+
+```scala
+scala> def addNumbers(x: Int, y: Int): Int = x + y
+addNumbers: (x: Int, y: Int)Int
+
+scala> addNumbers _
+res0: (Int, Int) => Int = $$Lambda$1495/60466312@3a332eed
+
+scala> res0.tupled
+res1: ((Int, Int)) => Int = scala.Function2$$Lambda$229/1860944798@3c0178f
+
+scala> val numbers = (1, 2)
+numbers: (Int, Int) = (1,2)
+
+scala> res1(numbers)
+res2: Int = 3
+```
+
+The pattern of __converting a method to a function and then calling '.tupled'__ can be useful because most operations
+we do in practise return pairs or list of pairs:
+
+```scala
+scala> val xs = Vector(1, 2, 3, 4)
+xs: scala.collection.immutable.Vector[Int] = Vector(1, 2, 3, 4)
+
+scala> val ys = xs.zip(xs.tail)
+ys: scala.collection.immutable.Vector[(Int, Int)] = Vector((1,2), (2,3), (3,4))
+
+scala> ys.map(res1)
+res3: scala.collection.immutable.Vector[Int] = Vector(3, 5, 7)
+
+scala> ys.map((addNumbers _).tupled)
+res4: scala.collection.immutable.Vector[Int] = Vector(3, 5, 7)
+```
+
 ## Scalaz Validation: Parsing user input
 Parsing user input is easy with Scala and is provided by the class [StringLike](http://scala-lang.org/files/archive/api/current/scala/collection/immutable/StringLike.html)
 and provides methods like 'toBoolean', 'toInt', 'toLong', 'toDouble', but all of these methods can throw exceptions like NumberFormatException and IllegalArgumentException.

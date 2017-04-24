@@ -4,15 +4,11 @@ organization := "com.github.dnvriend"
 
 version := "1.0.0-SNAPSHOT"
 
-scalaVersion := "2.12.1"
-
-scalaOrganization in ThisBuild := "org.typelevel"
-
-scalacOptions in ThisBuild += "-Yliteral-types"
+scalaVersion := "2.12.2"
 
 // functional and typelevel programming
 // https://github.com/scalaz/scalaz
-libraryDependencies += "org.scalaz" %% "scalaz-core" % "7.2.10"
+libraryDependencies += "org.scalaz" %% "scalaz-core" % "7.2.11"
 // https://github.com/mpilquist/simulacrum
 libraryDependencies += "com.github.mpilquist" %% "simulacrum" % "0.10.0"
 // https://github.com/milessabin/shapeless
