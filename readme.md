@@ -1,6 +1,107 @@
 # my-scala-notes
 My scala notes, because I need to store them somewhere...
 
+## Scala Functions
+Scala functions are instances of the scala.FunctionN[-T1, +R] trait. We can manually create instances
+of a function and call it:
+
+```scala
+scala> val f: Function1[Int, Int] = new Function1[Int, Int] { def apply(x: Int): Int = x + 1 }
+f: Int => Int = <function1>
+
+scala> f(1)
+res0: Int = 2
+```
+
+Wow, that is a lot of boilerplate syntax. Fortunately Scala has some syntactic sugar for us to use that
+generates this code for us:
+
+```scala
+scala> val f: Int => Int = (x: Int) => x + 1
+f: Int => Int = $$Lambda$1191/1289462509@2c1f8dbd
+
+scala> f(1)
+res1: Int = 2
+```
+
+Or very concise:
+
+```scala
+scala> val f = (_: Int) + 1
+f: Int => Int = $$Lambda$1192/1869813593@1f84327b
+
+scala> f(1)
+res2: Int = 2
+```
+
+## 0-Arity Functions
+0-Arity functions are functions that are instances of the scala.Function0[+R] trait:
+
+```scala
+scala> val f: Function0[Int] = new Function0[Int] { def apply(): Int = 1 }
+f: () => Int = <function0>
+
+scala> f()
+res0: Int = 1
+```
+
+Scala has special syntax for these kinds of functions:
+
+```scala
+scala> val f: Function0[Int] = () => 1
+f: () => Int = $$Lambda$1195/1872158052@4d7cac24
+
+scala> f()
+res1: Int = 1
+```
+
+Scala has syntactic sugar for the Function0 literal type:
+
+```scala
+scala> val f: () => Int = () => 1
+f: () => Int = $$Lambda$1194/413763859@7dbae40
+
+scala> f()
+res2: Int = 1
+```
+
+## Scala and Thunks
+A thunk is a 'call-by-name' parameter. It is most often used as a lazy evaluated parameter on methods.
+Thunks are implemented (under the hood) as Function0 functions by the Scala compiler
+but the thunk itself cannot be called with a 0-Arity function. Also, the thunk must be called parameter-less,
+lets look at an example:
+
+
+```scala
+scala> :paste
+// Entering paste mode (ctrl-D to finish)
+
+def foo[A](x: => A): Unit = {
+  println("Calling the thunk")
+  val result: A = x
+  println("Received from thunk: " + x)
+}
+
+// Exiting paste mode, now interpreting.
+
+foo: [A](x: => A)Unit
+```
+
+The method 'foo' can be called in the following ways:
+
+```scala
+scala> def bar(): Int = 42
+bar: ()Int
+
+scala> foo(bar())
+Calling the thunk
+Received from thunk: 42
+
+scala> foo (42 - 12 + 20)
+Calling the thunk
+Received from thunk: 50
+```
+
 ## How to unify method parameters and tuples
 Scala does not unify method parameters and tuples, for example, the following method:
 
