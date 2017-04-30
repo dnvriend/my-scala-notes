@@ -1,6 +1,62 @@
 # my-scala-notes
 My scala notes, because I need to store them somewhere...
 
+## Package objects
+If you come from a programming language like Java, then you know that you can organize your code in packages.
+The things you would put inside a package are classes, interfaces and enums. In the Scala language, until version 2.8
+this was basically the same so you could put classes, traits and objects inside a package. But from version 2.8 and up
+you can create a file named 'package.scala' and put that file into the package directory. Such a file is called a
+package object.
+
+The contents of the file must start with the keywords `package object` followed by the name of the package for example, if
+we have the package foo.bar.baz and I want to have a 'package object' in the package 'baz' then I would do the following:
+
+- create a file 'package.scala' in the directory foo/bar/baz
+- put the following content in the file:
+
+```scala
+package foo.bar
+
+package object baz {
+
+}
+```
+
+Between the curly braces you can put anything you'd like such as methods and constants or types and the cool thing is all of
+these will be available without any imports to all types inside the 'foo.bar.baz' package; pretty neat huh!
+
+What package object most often are used for is to hold:
+- package-wide type aliases
+- implicit conversions
+- constants
+- functions
+- methods
+
+A good package object you should know and take a look at is the [scala](https://github.com/scala/scala/blob/v2.12.2/src/library/scala/package.scala)
+package object, which definitions are automatically imported into every '.scala' file you create, together with the all
+definitions in the [scala.Predef](https://github.com/scala/scala/blob/v2.12.2/src/library/scala/Predef.scala) object and of course
+all the definitions in [java.lang](http://docs.oracle.com/javase/8/docs/api/java/lang/package-summary.html).
+
+## Package chaining
+Package chaining or [chained package clause](http://www.artima.com/scalazine/articles/chained_package_clauses_in_scala.html)
+is a way to get parent packages into scope of your '.scala' file. Say for example that I want to create an object named
+'BazObject' in the package foo.bar.baz, and say that all the packages 'foo', 'bar' and 'baz' all three of them have a
+package object defined so they would all have a file called 'package.scala', with the appropriate content and say I want
+to bring the contents of all these three packages into scope of the BazObject, then the package statement at the top of the
+'.scala' file will contain multiple 'chained' entries of each of the package names's content you wish to bring in scope,
+so for example for the BazObject the definition will be:
+
+```scala
+package foo
+package bar
+package baz
+
+// the contents of all the three packages are now in scope
+
+object BazObject {
+}
+```
+
 ## Scala Functions
 Scala functions are instances of the scala.FunctionN[-T1, +R] trait. We can manually create instances
 of a function and call it:
