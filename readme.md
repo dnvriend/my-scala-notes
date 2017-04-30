@@ -209,7 +209,7 @@ scala> Try("foo".toBoolean)
 res0: scala.util.Try[Boolean] = Failure(java.lang.IllegalArgumentException: For input string: "foo")
 ```
 
-Scalaz provides [scalaz.syntax.std.StingOps](https://github.com/scalaz/scalaz/blob/v7.2.11/core/src/main/scala/scalaz/syntax/std/StringOps.scala) and
+Scalaz provides [scalaz.syntax.std.StringOps](https://github.com/scalaz/scalaz/blob/v7.2.11/core/src/main/scala/scalaz/syntax/std/StringOps.scala) and
 provides the methods:
 
 - def parseBoolean: Validation[IllegalArgumentException, Boolean] = s.parseBoolean(self)
@@ -236,7 +236,7 @@ scala> "true".parseBoolean
 res1: scalaz.Validation[IllegalArgumentException,Boolean] = Success(true)
 ```
 
-All the methods provided by [scalaz.syntax.std.StingOps](https://github.com/scalaz/scalaz/blob/v7.2.11/core/src/main/scala/scalaz/syntax/std/StringOps.scala)
+All the methods provided by [scalaz.syntax.std.StringOps](https://github.com/scalaz/scalaz/blob/v7.2.11/core/src/main/scala/scalaz/syntax/std/StringOps.scala)
 return a [scalaz.Validation](https://github.com/scalaz/scalaz/blob/v7.2.11/core/src/main/scala/scalaz/Validation.scala) with a Throwable on the failure side
 and the expected type on the success side.
 
