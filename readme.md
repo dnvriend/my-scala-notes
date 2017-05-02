@@ -1,6 +1,402 @@
 # my-scala-notes
 My scala notes, because I need to store them somewhere...
 
+## Type
+Every variable and expression in a Scala program has a type that is known at compile time:
+
+```bash
+// a literal value has a type:
+scala> 1
+res0: Int = 1
+
+// a variable has a type and can refer only value instances of this type:
+scala> val x: Int = 1
+x: Int = 1
+
+// an expression produces a type:
+scala> :t 1 + 1
+Int
+```
+
+A type restricts the possible values to which a variable can refer, or an expression can produce, at run time.
+A variable or expression’s type can also be referred to as a static type if necessary to differentiate it from an object’s
+runtime type. In other words, “type” by itself means static type.
+
+Type is distinct from class because a class that takes type parameters can construct many types. For example, 'List' is a class,
+but not a type. 'List[A]' is a type with a free type parameter. 'List[Int]' and 'List[String]' are also types
+(called ground types because they have no free type parameters). A type can have a 'class' or 'trait.'
+
+For example, the class of type List[Int] is List. The trait of type Set[String] is Set.
+
+## Type Constructor
+A type constructor is a class or trait that takes type parameters like List[A]. So List[A] is a type constructor
+because it takes a type A, but for example 'List[String]' is a concrete type.
+
+## Type Parameter
+A Type Parameter is a parameter to a generic class or generic method that must be filled in by a type. For example,
+class List is defined as 'List[A]'. The 'A' is a type parameter.
+
+## Type Parameter Variance
+A type parameter of a class or trait can be marked with a variance annotation, either covariant (+) or contravariant (-).
+Such variance annotations indicate how subtyping works for a generic class or trait. For example, the generic class List
+is covariant in its type parameter so its actually List[+A], and thus List[String] is a subtype of List[Any].
+By default, i.e., absent a (+) or (-) annotation, type parameters are nonvariant.
+
+So its all about how subtyping works for the container type like eg. in this case List[String] is a subtype of List[Any]. (read this line again 5-times!)
+
+Lets try it out. First create a simple domain of Animals:
+
+```scala
+sealed trait Animal
+trait Swimmer { def swim: Unit = println("Swimming") }
+class Bird extends Animal {
+  def fly: Unit = println("flying")
+  override val toString = "Bird"
+}
+class Sparrow extends Bird { override val toString = "Sparrow" }
+class Duck extends Bird with Swimmer { override val toString = "Duck" }
+```
+
+We have created the following graph:
+
+```
+Duck    -> Swimmer -> Bird -> Animal -> AnyRef -> Any
+Sparrow ->            Bird -> Animal -> AnyRef -> Any
+```
+
+Lets say we create a Cage that will hold any Bird. We have some variance options of the case namely
+
+- An invariant cage [A],
+- A covariant cage [+A],
+- A contravariant cage [-A].
+
+### An Invariant Cage so Cage[A]
+Lets first look at the invariant relationship:
+
+```scala
+// an invariant Cage
+scala> class Cage[A](val animal: A)
+defined class Cage
+
+// lets create a birdCage
+scala> val birdCage = new Cage(new Bird)
+birdCage: Cage[Bird] = Cage@3ca14cf4
+```
+
+We have created a Cage that is invariant, meaning that there is no subtype relationship between
+two cages. If we ask the compiler to convert the birdCage, which is of type Cage[Bird] to a Cage[Sparrow]
+it cannot, because the instance is invariant meaning it cannot change the type of the Cage:
+
+```scala
+scala> birdCage: Cage[Sparrow]
+<console>:15: error: type mismatch;
+ found   : Cage[Bird]
+ required: Cage[Sparrow]
+Note: Bird >: Sparrow, but class Cage is invariant in type A.
+You may wish to define A as -A instead. (SLS 4.5)
+       birdCage: Cage[Sparrow]
+       ^
+```
+
+We will task about the error message later.
+
+If we ask the compiler to convert the birdCage, which is of type Cage[Bird] to a Cage[Animal]
+it cannot, because the instance is invariant meaning it cannot change the type of the Cage:
+
+```scala
+scala> birdCage: Cage[Animal]
+<console>:15: error: type mismatch;
+ found   : Cage[Bird]
+ required: Cage[Animal]
+Note: Bird <: Animal, but class Cage is invariant in type A.
+You may wish to define A as +A instead. (SLS 4.5)
+       birdCage: Cage[Animal]
+       ^
+```
+
+Does variance have anything to do with the instances Animal instances we can put in the birdCage?
+Well, we can put any Bird in the cage as we can see here:
+
+```scala
+scala> val birdCage: Cage[Bird] = new Cage(new Duck)
+birdCage: Cage[Bird] = Cage@28ee0a3c
+
+// the animal is a Duck, but its type is a Bird
+scala> birdCage.animal
+res0: Bird = Duck
+
+scala> val birdCage: Cage[Bird] = new Cage(new Sparrow)
+birdCage: Cage[Bird] = Cage@6221b13b
+
+// the animal is a Sparrow, but its type is a Bird
+scala> birdCage.animal
+res1: Bird = Sparrow
+```
+
+Note that the birdCage is still of type Cage[Bird] and all the animals that it contains
+will be seen as a Bird.
+
+### A Covariant Cage
+The birdCage we had so far is of an Invariant type so Cage[A]. When we asked the compiler to change the type
+of the Cage to a Cage[Animal] we couldn't. It did however gave a tip, we could change the type of the Cage to
+a covariant type by putting a (+) sign before the A, so Cage[+A], lets create a covariant Cage:
+
+```scala
+scala> class Cage[+A](val animal: A)
+defined class Cage
+
+// lets create a duckCage so a Cage[Duck]
+scala> val duckCage: Cage[Duck] = new Cage(new Duck)
+duckCage: Cage[Duck] = Cage@20b52576
+
+// the animal it holds is of type Duck
+scala> duckCage.animal
+res0: Duck = Duck
+```
+
+Because the Cage is Covariant meaning [+A], this means that there exists a subtype relationship between Cage[+A] types.
+The question is what the Cage[+A] subtype relationship is. A mnemonic for the Covariant relationship is looking at the sign.
+The (+) points UP, in our example, the Cage is defined as Cage[Duck]. So the following relationship exists:
+
+```
+Cage[Duck] -> Cage[Swimmer] -> Cage[Bird] -> Cage[Animal] -> Cage[AnyRef] -> Cage[Any]
+```
+
+You are right if you see the subtype relationship here of the type it contains! You got it!
+
+```scala
+scala> val swimmerCage: Cage[Swimmer] = duckCage
+swimmerCage: Cage[Swimmer] = Cage@20b52576
+
+scala> swimmerCage.animal
+res1: Swimmer = Duck
+
+scala> val birdCage: Cage[Bird] = duckCage
+birdCage: Cage[Bird] = Cage@20b52576
+
+scala> birdCage.animal
+res2: Bird = Duck
+
+scala> val animalCage: Cage[Animal] = duckCage
+animalCage: Cage[Animal] = Cage@20b52576
+
+scala> animalCage.animal
+res3: Animal = Duck
+
+scala> val anyRefCage: Cage[AnyRef] = duckCage
+anyRefCage: Cage[AnyRef] = Cage@20b52576
+
+scala> anyRefCage.animal
+res4: AnyRef = Duck
+
+scala> val anyCage: Cage[Any] = duckCage
+anyCage: Cage[Any] = Cage@20b52576
+
+scala> anyCage.animal
+res5: Any = Duck
+```
+
+The question now is, can we go the other way around? So can we convert a Cage[Animal] back to a Cage[Duck]?
+
+```scala
+scala> animalCage: Cage[Duck]
+<console>:15: error: type mismatch;
+ found   : Cage[Animal]
+ required: Cage[Duck]
+       animalCage: Cage[Duck]
+```
+
+No we cannot, because we have defined the Cage to be Covariant meaning Cage[+A].
+
+### A Contravariant Cage
+Right, when we changed the Cage to a Covariant type so Cage[+A] we could change the type of the cage UPwards, meaning
+pointing to the more abstract version of the animal the Cage contained, so when we started with a Cage[Duck], we could only
+go to a Cage[Any] so UPwards. Can we define a Contravariant Cage so Cage[-A]?
+
+Well, yes we can! Lets look at suck a cage:
+
+```scala
+scala> class Cage[-A](animal: A)
+defined class Cage
+
+scala> val birdCage: Cage[Bird] = new Cage(new Duck)
+birdCage: Cage[Bird] = Cage@f160948
+
+scala> val duckCage: Cage[Duck] = birdCage
+duckCage: Cage[Duck] = Cage@f160948
+```
+
+Because the Cage is contravariant so Cage[-A], we can change type of Cage DOWNwards, meaning in Object Oriented terms,
+'the more specialized type'. So in case of Cage[Bird], we can change the container type to a Cage[Duck], but what does that mean?
+
+Well think about it, a Duck is a more specialized type of Bird, it can fly AND swim for example, something a Bird cannot do; a Bird
+can only fly:
+
+```scala
+// a duck can both fly and swim
+scala> new Duck().fly
+flying
+
+scala> new Duck().swim
+Swimming
+
+// a bird cannot swim
+scala> new Bird().swim
+<console>:13: error: value swim is not a member of Bird
+       new Bird().swim
+```
+
+So, for example, when we start out with a contravariant Cage[-A], which means that if we want to parameterized the Cage, and
+for example define methods and fields in it what would it mean for the members of the cage if we start out with a Cage[Bird]
+and specialize it to a Cage[Duck]?
+
+For example, what if we create the following Cage:
+
+```scala
+class Cage[-A] {
+  def get: A
+  def put(animal: A): Unit = ???
+  val animal: A = ???
+  var animal: A = ???
+}
+```
+
+The example above won't compile, but lets determine why not, what is the problem with the definition. The Cage is defined as being
+contravariant so Cage[-A], so the A can be specialized. What is the problem when we start out with eg. a Cage[Any] and specialize it
+to Cage[Duck]. Lets determine what happens with the members of the Cage?
+
+Well, one problem is obvious, we can put 'Any' type into the Cage, so I can put a 'Car' into the Cage and that would be fine. If I
+can specialize the Cage to a Cage[Duck] then interesting things will happen for example, if I call `get()`
+
+```scala
+val anyCage: Cage[Any] = new Cage(new Car)
+val duckCage: Cage[Ducl] = anyCage
+val duck: Duck = duckCage.get
+```
+
+Well, obviously we would get a Car and cars don't have a swim method. So logically some members of an contravariant
+parameterized type have problems with being a member of such a type so being a member of a Cage[-A].
+
+The other way around however is no problem, if we are a member of a Covariant parameterized type for example a Cage[+A], and we can
+only go UPwards, we can become more generic, then a Cage[Duck] can become a Cage[Any].
+
+Each member of a parameterized type for example the constructor parameter, field, method parameter have a certain
+__position__ in the parameterized type, here Cage. When it comes to the variance of the type parameter of the parameterized type
+it has some consequence. Lets look at what the consequences are.
+
+### Type Parameter Variance Positions
+There seems to be a consequence for the members of a parameterized type like for example Cage when the variance of the
+type parameter is invariant, covariant (+) or contravariant (-). The possible positions and variance possibilities of
+the type parameter is as follows:
+
+```scala
+class Cage[A] {
+  def get: A // covariant (+)
+  def put(animal: A): Unit // contravariant (-)
+  val animal: A // covariant, "you can only get"
+  var animal: A // "covariant and contravariant" so invariant
+}
+```
+
+Okay, what does the 'blueprint' above mean? Well, you can't just 'sick-on-a-variance-type' on your parameterized type like Cage!
+You must think what the consequences are if you choose a variance.
+
+The type parameter is invariant:
+
+```scala
+class Cage[A] {
+  def get: A = ???
+  def put(animal: A): Unit = ???
+  val animal: A = ???
+  var _animal: A  = ???
+}
+```
+
+When the variance is INVARIANT, so Cage[A], you can do the above, but the consequence is that the container type doesn't have
+a subtype relationship.
+
+The type parameter is covariant:
+
+```scala
+class Cage[+A] {
+  def get: A = ???
+  val animal: A = ???
+}
+```
+
+When the variance is COVARIANT, so Cage[+A], you can do the above, you can only get AND you can have an immutable so read-only
+field. For the invariant and covariant Cage examples above, I  promoted the contructor parameter of the class to a field by
+adding the 'val' keyword, which creates a member in the class that can be made accessible by means of
+the [uniform access principle](http://docs.scala-lang.org/glossary/?_ga=2.245963020.901493608.1493730758-1815524523.1439721849#uniform-access-principle):
+so thats why we could call: `birdCage.animal`.
+
+The type parameter is contravariant:
+
+```scala
+class Cage[-A](animal: A) {
+  def put(animal: A): Unit = ???
+}
+```
+
+When the variance is CONTRAVARIANT, so Cage[-A], so the contained subtype relationship has been reversed, you can do the above,
+so only use constructor parameters and method parameters, nothing else.
+
+We have learned the following:
+
+- Types of vals are in covariant position (+)
+- Types of vars are in invariant position
+- Method parameter types are in contravariant position (-)
+- Method return types are in covariant position (+)
+- Class parameters don't matter
+
+So what about the following parameterized type:
+
+```scala
+trait Function1[-A, +B] {
+  def apply(v1: A): B
+}
+```
+
+This is our good old Function1, it is a parameterized type that has two type parameters A and B and it defines a transformation
+from A to B so A => B. What does the definition mean? Well, the A is Covariant so A and UPwards, and B is contravariant so B and
+DOWNwards - more specialized. What does this mean, well, if we create a function and be explicit about the A and B types, instances
+of this class ony have the following options:
+
+So, the A - the input of the function - is covariant, meaning it may accept Bird or UPwards, so Bird .. AnyRef is fine.
+The B - the output of the function - is contravariant, meaning it may return Bird, or DOWNwards - more specialized, so Bird .. Duck in
+this case would be fine. Lets check!
+
+```scala
+scala> val f: Function1[Bird, Bird] = (bird: Bird) => bird
+f: Bird => Bird = $$Lambda$1513/719932510@6c544072
+```
+
+Okay, Bird => Bird works (as expected), what about AnyRef => Bird ?
+
+```scala
+val f: Function1[Bird, Bird] = (bird: AnyRef) => bird.asInstanceOf[Bird]
+```
+
+Also works, good, what about AnyRef => Duck? Lets assume we have created a function that doesn't do what
+we do here, but actually does some sane checks, that going from an AnyRef => Duck is valid:
+
+```scala
+scala> val f: Function1[Bird, Bird] = (bird: AnyRef) => bird.asInstanceOf[Duck]
+f: Bird => Bird = $$Lambda$1515/1934315662@738118e5
+```
+
+Nice, okay, now for something that shouldn't work. Going from AnyRef => AnyRef. Why shouldn't this work?
+Well, we've defined our function as Function1[Bird, Bird], and because the type parameters are Function1[+A, -B],
+a Bird or a more specialized version of Bird must be retuned, and here we break that rule, we return an AnyRef:
+
+```scala
+scala> val f: Function1[Bird, Bird] = (bird: AnyRef) => bird
+<console>:12: error: type mismatch;
+ found   : AnyRef
+ required: Bird
+       val f: Function1[Bird, Bird] = (bird: AnyRef) => bird
+```
+
 ## Package objects
 If you come from a programming language like Java, then you know that you can organize your code in packages.
 The things you would put inside a package are classes, interfaces and enums. In the Scala language, until version 2.8
